@@ -58,7 +58,7 @@ def main(owm_api_key,
     previous_event = get_last_event()
 
     if previous_event != event_name:
-        ifttt_url = 'https://maker.ifttt.com/trigger/{event_name}/with/key/%s' % ifttt_api_key
+        ifttt_url = 'https://maker.ifttt.com/trigger/%s/with/key/%s' % (event_name, ifttt_api_key)
         ifttt_data = {'value1': temp, 'value2': 'forced: %s' % force_high}
         requests.post(ifttt_url, data=ifttt_data)
         write_event(event_name, ifttt_data)
