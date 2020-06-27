@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 
 import click
 from pyowm.owm import OWM
@@ -15,10 +16,11 @@ def get_last_event():
         return None
 
 
-def write_event(event_name):
+def write_event(event_name, data):
     with open(LAST_EVENT_FILENAME, 'wt') as f:
         f.write(event_name)
-        f.write('\n%s' % datetime.now().isoformat())
+        f.write('\n%s\n' % datetime.now().isoformat())
+        f.write(json.dumps(data))
 
 
 @click.command()
@@ -30,16 +32,15 @@ def write_event(event_name):
 @click.option('--normal_temp_event_name', default='normal_temp',
               help='The IFTTT event name for when the temperature goes under the threshold')
 @click.option('--city', default='Pavia,IT', help='The OpenWeatherMap city name to read temp for')
-@click.option('--motherboard_temp', type=float, help='The motherboard temperature (or another secondary temperature)')
-@click.option('--motherboard_temp_threshold', default=45.0, type=float, help='the motherboard (or other) temperature threshold')
+@click.option('--force_high/--no_force', '-f/-n', default=False,
+              help='Force the temperature state to high, for example, in case CPU temp is over a threshold')
 def main(owm_api_key,
          ifttt_api_key,
          temp_threshold,
          high_temp_event_name,
          normal_temp_event_name,
          city,
-         motherboard_temp,
-         motherboard_temp_threshold):
+         force_high):
     """
     If *either* the outside temperature is over a threshold, *or* some other
     temperature (currently motherboard temp, measured outside this script)
@@ -51,16 +52,16 @@ def main(owm_api_key,
     observation = weather_manager.weather_at_place(city)
     temp = observation.weather.temperature('celsius')['temp']
     event_name = normal_temp_event_name
-    if temp > temp_threshold or motherboard_temp > motherboard_temp_threshold:
+    if temp > temp_threshold or force_high:
         event_name = high_temp_event_name
 
     previous_event = get_last_event()
 
     if previous_event != event_name:
         ifttt_url = 'https://maker.ifttt.com/trigger/{event_name}/with/key/%s' % ifttt_api_key
-        ifttt_data = {'value1': temp, 'value2': motherboard_temp}
+        ifttt_data = {'value1': temp, 'value2': 'forced: %s' % force_high}
         requests.post(ifttt_url, data=ifttt_data)
-        write_event(event_name)
+        write_event(event_name, ifttt_data)
 
 
 if __name__ == '__main__':
