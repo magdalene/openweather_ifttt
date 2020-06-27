@@ -1,0 +1,3 @@
+pyowm
+requests
+click
