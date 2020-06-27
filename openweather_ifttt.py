@@ -25,11 +25,13 @@ def write_event(event_name):
 @click.option('--owm_api_key', help='OpenWeatherMap.org API key')
 @click.option('--ifttt_api_key', help='IFTTT API key')
 @click.option('--temp_threshold', type=float, default=25.0, help='High temperature threshold')
-@click.option('--high_temp_event_name', default='high_temp')
-@click.option('--normal_temp_event_name', default='normal_temp')
-@click.option('--city', default='Pavia,IT')
-@click.option('--motherboard_temp', type=float)
-@click.option('--motherboard_temp_threshold', default=45.0, type=float)
+@click.option('--high_temp_event_name', default='high_temp',
+              help='The IFTTT event name for when the temperature goes over the threshold')
+@click.option('--normal_temp_event_name', default='normal_temp',
+              help='The IFTTT event name for when the temperature goes under the threshold')
+@click.option('--city', default='Pavia,IT', help='The OpenWeatherMap city name to read temp for')
+@click.option('--motherboard_temp', type=float, help='The motherboard temperature (or another secondary temperature)')
+@click.option('--motherboard_temp_threshold', default=45.0, type=float, help='the motherboard (or other) temperature threshold')
 def main(owm_api_key,
          ifttt_api_key,
          temp_threshold,
@@ -38,6 +40,12 @@ def main(owm_api_key,
          city,
          motherboard_temp,
          motherboard_temp_threshold):
+    """
+    If *either* the outside temperature is over a threshold, *or* some other
+    temperature (currently motherboard temp, measured outside this script)
+    is over a threshold, consider the temperature "high". Send an event to
+    IFTTT so we can take action (like turning on a fan).
+    """
     owm = OWM(owm_api_key)
     weather_manager = owm.weather_manager()
     observation = weather_manager.weather_at_place(city)
